@@ -41,9 +41,9 @@ export enum LogLevel {
 /**
  * The config object for the Logger, pass to the constructer or Logger.config field in order to customise the Logger.
  */
-export interface LoggerConfig {
-	minLevel: LogLevel;
-	logLine: boolean;
+export class LoggerConfig {
+	minLevel?: LogLevel = LogLevel.INFO;
+	logLine?: boolean = true;
 }
 
 const reset = "\x1b[0m";
@@ -144,7 +144,7 @@ export class Logger {
 	 * @param severity The severity of log
 	 */
 	private write(message: string, severity: LogLevel) {
-		if (this.config.minLevel < severity) return;
+		if (this.config.minLevel && this.config.minLevel < severity) return;
 		let style = "";
 		switch (severity) {
 			case LogLevel.EMERGENCY:

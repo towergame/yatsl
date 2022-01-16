@@ -1,6 +1,6 @@
 {
   "name": "yatsl",
-  "version": "1.0.9",
+  "version": "1.0.12",
   "description": "A simple logger utility for typescript with colourful ANSI output.",
   "files": [
     "dist"
