@@ -44,6 +44,7 @@ export enum LogLevel {
 export class LoggerConfig {
 	minLevel?: LogLevel = LogLevel.INFO;
 	logLine?: boolean = true;
+	name?: string = "";
 }
 
 const reset = "\x1b[0m";
@@ -57,7 +58,8 @@ export class Logger {
 	 */
 	public config: LoggerConfig = {
 		minLevel: LogLevel.DEBUG,
-		logLine: true
+		logLine: true,
+		name: ""
 	}
 
 	constructor(conf?: LoggerConfig) {
@@ -173,7 +175,8 @@ export class Logger {
 				break;
 		}
 		let line = "";
-		if (this.config.logLine) line = " | " + this.getCallSignature();
+		if (this.config.logLine) line += " | " + this.getCallSignature();
+		if (this.config.name !== "") line += " | " + this.config.name;
 		console.log("\x1b[2m" + (new Date()).toISOString() + reset + " [" + style + reset + line + "] " + message);
 	}
 }
