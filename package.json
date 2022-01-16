@@ -1,0 +1,35 @@
+{
+  "name": "yatsl",
+  "version": "1.0.0",
+  "description": "A simple logger utility for typescript with colourful ANSI output.",
+  "files": [
+    "dist"
+  ],
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "clean": "rimraf dist",
+    "prebuild": "npm run clean",
+    "build": "tsc",
+    "preversion": "npm run build --watch",
+    "postversion": "git push --follow-tags"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/towergame/yatsl.git"
+  },
+  "keywords": [
+    "logger",
+    "typescript"
+  ],
+  "author": "towergame",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/towergame/yatsl/issues"
+  },
+  "homepage": "https://github.com/towergame/yatsl#readme",
+  "devDependencies": {
+    "rimraf": "^3.0.2",
+    "typescript": "^4.5.4"
+  }
+}
