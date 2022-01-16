@@ -181,4 +181,4 @@ export class Logger {
 /**
  * The default Logger object, useful for when you can't be bothered to instantiate your own.
  */
-export default new Logger();
+export let logger = new Logger();

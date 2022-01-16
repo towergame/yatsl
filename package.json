@@ -1,17 +1,17 @@
 {
   "name": "yatsl",
-  "version": "1.0.0",
+  "version": "1.0.9",
   "description": "A simple logger utility for typescript with colourful ANSI output.",
   "files": [
     "dist"
   ],
-  "main": "index.js",
+  "main": "dist/index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "clean": "rimraf dist",
     "prebuild": "npm run clean",
     "build": "tsc",
-    "preversion": "npm run build --watch",
+    "preversion": "npm run build",
     "postversion": "git push --follow-tags"
   },
   "repository": {
