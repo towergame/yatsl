@@ -1,3 +1,10 @@
+import stream from "stream";
+import process from "process";
+
+function stripAnsi(ansiString: string) {
+	return JSON.parse(JSON.stringify(ansiString).replace(/\\u001b\[(\d+;)*\d+m/g, ""));
+}
+
 /**
  * Enum containing the log levels used by the Logger.
  * 
@@ -45,6 +52,7 @@ export class LoggerConfig {
 	minLevel?: LogLevel = LogLevel.INFO;
 	logLine?: boolean = true;
 	name?: string = "";
+	streams?: { stream: stream.Writable, color: boolean }[];
 }
 
 const reset = "\x1b[0m";
@@ -59,11 +67,12 @@ export class Logger {
 	public config: LoggerConfig = {
 		minLevel: LogLevel.DEBUG,
 		logLine: true,
-		name: ""
+		name: "",
+		streams: [ { stream: process.stdout, color: true } ],
 	}
 
 	constructor(conf?: LoggerConfig) {
-		if (conf) this.config = conf;
+		if (conf) this.config = { ...this.config, ...conf };
 	}
 
 	/**
@@ -177,7 +186,13 @@ export class Logger {
 		let line = "";
 		if (this.config.logLine) line += " | " + this.getCallSignature();
 		if (this.config.name !== "") line += " | " + this.config.name;
-		console.log("\x1b[2m" + (new Date()).toISOString() + reset + " [" + style + reset + line + "] " + message);
+
+		const ansiLogStr = `\x1b[2m${(new Date()).toISOString()}${reset} [${style}${reset}${line}] ${message}\n`;
+		const rawLogStr = stripAnsi(ansiLogStr);
+
+		this.config.streams?.forEach((stream) => {
+			stream.stream.write(stream.color ? ansiLogStr : rawLogStr);
+		});
 	}
 }
 
