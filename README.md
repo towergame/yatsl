@@ -31,5 +31,7 @@ let logger = new Logger({logLine: false});
 logger.info("Hello World!");
 ```
 
+Additional information on how to better customise the logger can be found on the [wiki](https://github.com/towergame/yatsl/wiki).
+
 **Wow this thing sucks, it doesn't even support \<XYZ\>!!**  
 If you want a feature that is currently missing, feel free to make an issue. Alternatively, if you're up for getting down and dirty yourself, you can always implement the feature yourself and make a pull request.
