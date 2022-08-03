@@ -155,7 +155,7 @@ export class Logger {
 	 * @param severity The severity of log
 	 */
 	private write(message: string, severity: LogLevel) {
-		if (this.config.minLevel && this.config.minLevel < severity) return;
+		if ((this.config.minLevel !== null || this.config.minLevel !== undefined) && this.config.minLevel! < severity) return;
 		let style = "";
 		switch (severity) {
 			case LogLevel.EMERGENCY:
