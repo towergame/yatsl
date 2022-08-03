@@ -1,0 +1,37 @@
+﻿name: Increment Version
+on:
+  workflow_dispatch:
+    inputs:
+      version_type:
+        description: 'Version Type'     
+        required: true
+        default: 'patch'
+        type: 'choice'
+        options:
+        - major
+        - premajor
+        - minor
+        - preminor
+        - patch
+        - prepatch
+        - prerelease
+      message:
+        description: 'Commit Message'
+        required: true
+        default: 'Upgrade to %s'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Use Node.js
+        uses: actions/setup-node@v2
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Increment Version
+        run: npm version $VERSION_TYPE -m "$MESSAGE"

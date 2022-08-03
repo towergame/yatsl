@@ -1,6 +1,7 @@
-# YATSL
+# YATSL ![Test Status](https://github.com/towergame/yatsl/actions/workflows/testing.yml/badge.svg)  
 *(**Y**et **A**nother **T**ype**S**cript **L**ogger)*  
     
+
 **What is this?**  
 A logger utility that *should* be relatively simple/quick to set up and offers a neat output. It's also not anything fancy, it will not connect to 5 different servers and upload the log to the blockchain or something, but it should be sufficient for debug logging or just in general having an idea what your typescript program is doing.
 
