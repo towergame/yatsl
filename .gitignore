@@ -1,2 +1,5 @@
+# Node package stuff
 dist
 node_modules
+# Ignore the debug folder
+debug
