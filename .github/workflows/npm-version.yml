@@ -34,4 +34,7 @@ jobs:
         run: npm ci
 
       - name: Increment Version
-        run: npm version $VERSION_TYPE -m "$MESSAGE"
+        run: npm version $VERSION -m "$MESSAGE"
+        env:
+          VERSION: ${{ inputs.version_type }}
+          MESSAGE: ${{ inputs.message }}
