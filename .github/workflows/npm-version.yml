@@ -34,7 +34,10 @@ jobs:
         run: npm ci
 
       - name: Increment Version
-        run: npm version $VERSION -m "$MESSAGE"
+        run: |
+          git config --global user.email "towergame.epic@gmail.com"
+          git config --global user.name "towergame"
+          npm version $VERSION -m "$MESSAGE"
         env:
           VERSION: ${{ inputs.version_type }}
           MESSAGE: ${{ inputs.message }}
