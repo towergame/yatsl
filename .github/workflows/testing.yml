@@ -10,8 +10,8 @@ jobs:
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v1
-            - name: 'Install Node'
-              uses: actions/setup-node@v1
+            - name: Setup Node.js environment
+              uses: actions/setup-node@v3.4.1
             - name: Install dependencies
               run: npm install 
             - name: "Run Tests"
