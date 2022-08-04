@@ -2,6 +2,9 @@
   "include": [
     "src"
   ],
+"exclude": [
+	"*/**/*.spec.ts"
+],
   "compilerOptions": {
     "target": "es5",
     "module": "CommonJS",
