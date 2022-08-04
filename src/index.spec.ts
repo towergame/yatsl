@@ -707,3 +707,81 @@ describe("Logging an object with tabs set to false", () => {
 		return chai.expect(testStream.read().toString()).to.match(/\s/);
 	});
 });
+
+describe("Logging with an option override setting minLevel to EMERGENCY", () => {
+	// Set up the logger
+	let testStream = new stream.PassThrough();
+	let logger = new Logger({
+		streams: [{ stream: testStream, color: true }] // Creates a logger with default settings, except logs it to our custom stream for testing
+	});
+	it("DEBUG should log once", () => {
+		// Log a test message
+		logger.overrideConfig({ minLevel: LogLevel.EMERGENCY });
+		logger.debug("This is a test.");
+		let a = testStream.read();
+		logger.debug("This is a test.");
+		let b = testStream.read();
+
+		return chai.expect(a).to.equal(null).but.not.equal(b);
+	});
+	it("INFO should log once", () => {
+		// Log a test message
+		logger.overrideConfig({ minLevel: LogLevel.EMERGENCY });
+		logger.info("This is a test.");
+		let a = testStream.read();
+		logger.info("This is a test.");
+		let b = testStream.read();
+
+		return chai.expect(a).to.equal(null).but.not.equal(b);
+	});
+	it("NOTICE should log once", () => {
+		// Log a test message
+		logger.overrideConfig({ minLevel: LogLevel.EMERGENCY });
+		logger.note("This is a test.");
+		let a = testStream.read();
+		logger.note("This is a test.");
+		let b = testStream.read();
+
+		return chai.expect(a).to.equal(null).but.not.equal(b);
+	});
+	it("WARNING should log once", () => {
+		// Log a test message
+		logger.overrideConfig({ minLevel: LogLevel.EMERGENCY });
+		logger.warn("This is a test.");
+		let a = testStream.read();
+		logger.warn("This is a test.");
+		let b = testStream.read();
+
+		return chai.expect(a).to.equal(null).but.not.equal(b);
+	});
+	it("ERROR should log once", () => {
+		// Log a test message
+		logger.overrideConfig({ minLevel: LogLevel.EMERGENCY });
+		logger.error("This is a test.");
+		let a = testStream.read();
+		logger.error("This is a test.");
+		let b = testStream.read();
+
+		return chai.expect(a).to.equal(null).but.not.equal(b);
+	});
+	it("CRITICAL should log once", () => {
+		// Log a test message
+		logger.overrideConfig({ minLevel: LogLevel.EMERGENCY });
+		logger.critical("This is a test.");
+		let a = testStream.read();
+		logger.critical("This is a test.");
+		let b = testStream.read();
+
+		return chai.expect(a).to.equal(null).but.not.equal(b);
+	});
+	it("ALERT should log once", () => {
+		// Log a test message
+		logger.overrideConfig({ minLevel: LogLevel.EMERGENCY });
+		logger.alert("This is a test.");
+		let a = testStream.read();
+		logger.alert("This is a test.");
+		let b = testStream.read();
+
+		return chai.expect(a).to.equal(null).but.not.equal(b);
+	});
+});
