@@ -227,7 +227,10 @@ export class Logger {
 	 */
 	private write(rawMessage: any[], severity: LogLevel) {
 		let actualConfig = { ...this.config, ...this.override };
-		if ((actualConfig.minLevel !== null || actualConfig.minLevel !== undefined) && actualConfig.minLevel! < severity) return;
+		if ((actualConfig.minLevel !== null || actualConfig.minLevel !== undefined) && actualConfig.minLevel! < severity) {
+			this.override = {};
+			return;
+		}
 
 		let message = rawMessage.length > 0 ? this.stringify(rawMessage, actualConfig) : "";
 
