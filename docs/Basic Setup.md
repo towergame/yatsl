@@ -38,3 +38,6 @@ This allows for fine-tuning of log options during creation of the logger. It sho
 | logLine  | bool                      | Determines whether or not to log the file and line where the log function was called                                                                           |
 | name     | string                    | The name of the logger, if set, it is printed along with the message                                                                                           |
 | streams  | {stream.Writable, bool}[] | Defines the streams the logger will write to. Each stream requires a writeable stream object and a boolean determining whether or not the stream supports ANSI |
+| decimalDigits | number			   | Defines how many digits to render after the comma for numbers passed to the logger. |
+| multilineObjects | boolean			   | Whether to output object JSON representations in multiple lines or a single one, arrays of objects are always rendered in a single line. |
+| tabs | number			   | Whether to use tabs or spaces for multi-line JSON. |
