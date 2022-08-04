@@ -178,12 +178,12 @@ export class Logger {
 	private stringify(content: any[], recursive: boolean = false): string {
 		let result = "";
 		if (content.length > 1) {
-			result += "[ ";
-			content.forEach(element => {
-				result += this.stringify(element, true) + ", ";
-			});
-			result.substring(0, result.length - 2);
-			result += " ]";
+			// result += "[ ";
+			for (let x: number = 0; x < content.length; x++) {
+				result += this.stringify([content[x]], true);
+				if (x + 1 !== content.length) result += " | ";
+			}
+			// result += " ]";
 		} else if (content.length === 0) {
 			result = "[ ]"; /* If we're given an empty array, just return "[ ]" to indicate that it's empty.
 			            	   Hopefully that's what the user wanted and there isn't a horrible bug that passes an empty array to this function. */
