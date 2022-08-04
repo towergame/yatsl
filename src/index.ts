@@ -193,7 +193,7 @@ export class Logger {
 					result = content[0];
 					break;
 				case "number":
-					result = (content[0] as number).toFixed(this.config.decimalDigits);
+					result = (content[0] as number).toFixed(content[0] % 1 > 0 ? this.config.decimalDigits : 0);
 					break;
 				case "boolean":
 					result = content[0].toString();
