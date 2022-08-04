@@ -341,3 +341,369 @@ describe("Logging to multiple streams", () => {
 		return chai.expect(testStream.read().toString()).to.equal(testStream2.read().toString());
 	});
 });
+
+describe("Logging an object with default settings", () => {
+	// Set up the logger
+	let testStream = new stream.PassThrough();
+	let logger = new Logger({
+		streams: [{ stream: testStream, color: true }] // Creates a logger with default settings, except logs it to our custom stream for testing
+	});
+	let testObject = {
+		text: "Nice String with \"some escaped\": characters"
+	}
+	it("DEBUG should log a multiline object using tabs", () => {
+		// Log a test message
+		logger.debug(testObject);
+
+		return chai.expect(testStream.read().toString()).to.match(/\t/);
+	});
+	it("DEBUG should format the JSON correctly", () => {
+		// Log a test message
+		logger.debug(testObject);
+
+		return chai.expect(testStream.read().toString()).to.match(/\[\d+m"text"/).not.match(/\[\d+m\\\"some escaped\\\":/); // The key should be formatted but the string containing escaped quotes followed by a colon should not be.
+	});
+	it("INFO should log a multiline object using tabs", () => {
+		// Log a test message
+		logger.info(testObject);
+
+		return chai.expect(testStream.read().toString()).to.match(/\t/);
+	});
+	it("INFO should format the JSON correctly", () => {
+		// Log a test message
+		logger.info(testObject);
+
+		return chai.expect(testStream.read().toString()).to.match(/\[\d+m"text"/).not.match(/\[\d+m\\\"some escaped\\\":/);
+	});
+	it("NOTICE should log a multiline object using tabs", () => {
+		// Log a test message
+		logger.note(testObject);
+
+		return chai.expect(testStream.read().toString()).to.match(/\t/);
+	});
+	it("NOTICE should format the JSON correctly", () => {
+		// Log a test message
+		logger.note(testObject);
+
+		return chai.expect(testStream.read().toString()).to.match(/\[\d+m"text"/).not.match(/\[\d+m\\\"some escaped\\\":/);
+	});
+	it("WARNING should log a multiline object using tabs", () => {
+		// Log a test message
+		logger.warn(testObject);
+
+		return chai.expect(testStream.read().toString()).to.match(/\t/);
+	});
+	it("WARNING should format the JSON correctly", () => {
+		// Log a test message
+		logger.warn(testObject);
+
+		return chai.expect(testStream.read().toString()).to.match(/\[\d+m"text"/).not.match(/\[\d+m\\\"some escaped\\\":/);
+	});
+	it("ERROR should log a multiline object using tabs", () => {
+		// Log a test message
+		logger.error(testObject);
+
+		return chai.expect(testStream.read().toString()).to.match(/\t/);
+	});
+	it("ERROR should format the JSON correctly", () => {
+		// Log a test message
+		logger.error(testObject);
+
+		return chai.expect(testStream.read().toString()).to.match(/\[\d+m"text"/).not.match(/\[\d+m\\\"some escaped\\\":/);
+	});
+	it("CRITICAL should log a multiline object using tabs", () => {
+		// Log a test message
+		logger.critical(testObject);
+
+		return chai.expect(testStream.read().toString()).to.match(/\t/);
+	});
+	it("CRITICAL should format the JSON correctly", () => {
+		// Log a test message
+		logger.critical(testObject);
+
+		return chai.expect(testStream.read().toString()).to.match(/\[\d+m"text"/).not.match(/\[\d+m\\\"some escaped\\\":/);
+	});
+	it("ALERT should log a multiline object using tabs", () => {
+		// Log a test message
+		logger.alert(testObject);
+
+		return chai.expect(testStream.read().toString()).to.match(/\t/);
+	});
+	it("ALERT should format the JSON correctly", () => {
+		// Log a test message
+		logger.alert(testObject);
+
+		return chai.expect(testStream.read().toString()).to.match(/\[\d+m"text"/).not.match(/\[\d+m\\\"some escaped\\\":/);
+	});
+	it("EMERGENCY should log a multiline object using tabs", () => {
+		// Log a test message
+		logger.emergency(testObject);
+
+		return chai.expect(testStream.read().toString()).to.match(/\t/);
+	});
+	it("EMERGENCY should format the JSON correctly", () => {
+		// Log a test message
+		logger.emergency(testObject);
+
+		return chai.expect(testStream.read().toString()).to.match(/\[\d+m"text"/).not.match(/\[\d+m\\\"some escaped\\\":/);
+	});
+});
+
+describe("Logging an object with colour formatting disabled", () => {
+	// Set up the logger
+	let testStream = new stream.PassThrough();
+	let logger = new Logger({
+		streams: [{ stream: testStream, color: false }] // Creates a logger with default settings, except logs it to our custom stream for testing
+	});
+	let testObject = {
+		text: "Nice String with \"some escaped\": characters"
+	}
+	it("DEBUG should not log any ANSI escape codes", () => {
+		// Log a test message
+		logger.debug(testObject);
+
+		return chai.expect(testStream.read().toString()).not.contain('\x1b');
+	});
+	it("INFO should not log any ANSI escape codes", () => {
+		// Log a test message
+		logger.info(testObject);
+
+		return chai.expect(testStream.read().toString()).not.contain('\x1b');
+	});
+	it("NOTICE should not log any ANSI escape codes", () => {
+		// Log a test message
+		logger.note(testObject);
+
+		return chai.expect(testStream.read().toString()).not.contain('\x1b');
+	});
+	it("WARNING should not log any ANSI escape codes", () => {
+		// Log a test message
+		logger.warn(testObject);
+
+		return chai.expect(testStream.read().toString()).not.contain('\x1b');
+	});
+	it("ERROR should not log any ANSI escape codes", () => {
+		// Log a test message
+		logger.error(testObject);
+
+		return chai.expect(testStream.read().toString()).not.contain('\x1b');
+	});
+	it("CRITICAL should not log any ANSI escape codes", () => {
+		// Log a test message
+		logger.critical(testObject);
+
+		return chai.expect(testStream.read().toString()).not.contain('\x1b');
+	});
+	it("ALERT should not log any ANSI escape codes", () => {
+		// Log a test message
+		logger.alert(testObject);
+
+		return chai.expect(testStream.read().toString()).not.contain('\x1b');
+	});
+	it("EMERGENCY should not log any ANSI escape codes", () => {
+		// Log a test message
+		logger.emergency(testObject);
+
+		return chai.expect(testStream.read().toString()).not.contain('\x1b');
+	});
+});
+
+describe("Logging multiple objects in a single call", () => {
+	// Set up the logger
+	let testStream = new stream.PassThrough();
+	let logger = new Logger({
+		streams: [{ stream: testStream, color: true }], // Creates a logger with default settings, except logs it to our custom stream for testing
+	});
+	let testObject1 = {
+		id: 1,
+		message: "Nice String with \"some escaped\": characters"
+	};
+	let testObject2 = {
+		id: 2,
+		message: "Another nice string."
+	};
+	it("DEBUG should not log any newlines", () => {
+		// Log a test message
+		logger.debug(testObject1, testObject2);
+		let testString: string = testStream.read().toString();
+
+		return chai.expect(testString.substring(0, testString.length - 1)).not.contain('\n'); // ignore the newline at the end because it doesn't count for the test
+	});
+	it("INFO should not log any newlines", () => {
+		// Log a test message
+		logger.info(testObject1, testObject2);
+		let testString: string = testStream.read().toString();
+
+		return chai.expect(testString.substring(0, testString.length - 1)).not.contain('\n');
+	});
+	it("NOTICE should not log any newlines", () => {
+		// Log a test message
+		logger.note(testObject1, testObject2);
+		let testString: string = testStream.read().toString();
+
+		return chai.expect(testString.substring(0, testString.length - 1)).not.contain('\n');
+	});
+	it("WARNING should not log any newlines", () => {
+		// Log a test message
+		logger.warn(testObject1, testObject2);
+		let testString: string = testStream.read().toString();
+
+		return chai.expect(testString.substring(0, testString.length - 1)).not.contain('\n');
+	});
+	it("ERROR should not log any newlines", () => {
+		// Log a test message
+		logger.error(testObject1, testObject2);
+		let testString: string = testStream.read().toString();
+
+		return chai.expect(testString.substring(0, testString.length - 1)).not.contain('\n');
+	});
+	it("CRITICAL should not log any newlines", () => {
+		// Log a test message
+		logger.critical(testObject1, testObject2);
+		let testString: string = testStream.read().toString();
+
+		return chai.expect(testString.substring(0, testString.length - 1)).not.contain('\n');
+	});
+	it("ALERT should not log any newlines", () => {
+		// Log a test message
+		logger.alert(testObject1, testObject2);
+		let testString: string = testStream.read().toString();
+
+		return chai.expect(testString.substring(0, testString.length - 1)).not.contain('\n');
+	});
+	it("EMERGENCY should not log any newlines", () => {
+		// Log a test message
+		logger.emergency(testObject1, testObject2);
+		let testString: string = testStream.read().toString();
+
+		return chai.expect(testString.substring(0, testString.length - 1)).not.contain('\n');
+	});
+});
+
+describe("Logging an object with multilineObjects disabled", () => {
+	// Set up the logger
+	let testStream = new stream.PassThrough();
+	let logger = new Logger({
+		streams: [{ stream: testStream, color: true }], // Creates a logger with default settings, except logs it to our custom stream for testing
+		multilineObjects: false
+	});
+	let testObject = {
+		text: "Nice String with \"some escaped\": characters"
+	}
+	it("DEBUG should not log any newlines", () => {
+		// Log a test message
+		logger.debug(testObject);
+		let testString: string = testStream.read().toString();
+
+		return chai.expect(testString.substring(0, testString.length - 1)).not.contain('\n'); // ignore the newline at the end because it doesn't count for the test
+	});
+	it("INFO should not log any newlines", () => {
+		// Log a test message
+		logger.info(testObject);
+		let testString: string = testStream.read().toString();
+
+		return chai.expect(testString.substring(0, testString.length - 1)).not.contain('\n');
+	});
+	it("NOTICE should not log any newlines", () => {
+		// Log a test message
+		logger.note(testObject);
+		let testString: string = testStream.read().toString();
+
+		return chai.expect(testString.substring(0, testString.length - 1)).not.contain('\n');
+	});
+	it("WARNING should not log any newlines", () => {
+		// Log a test message
+		logger.warn(testObject);
+		let testString: string = testStream.read().toString();
+
+		return chai.expect(testString.substring(0, testString.length - 1)).not.contain('\n');
+	});
+	it("ERROR should not log any newlines", () => {
+		// Log a test message
+		logger.error(testObject);
+		let testString: string = testStream.read().toString();
+
+		return chai.expect(testString.substring(0, testString.length - 1)).not.contain('\n');
+	});
+	it("CRITICAL should not log any newlines", () => {
+		// Log a test message
+		logger.critical(testObject);
+		let testString: string = testStream.read().toString();
+
+		return chai.expect(testString.substring(0, testString.length - 1)).not.contain('\n');
+	});
+	it("ALERT should not log any newlines", () => {
+		// Log a test message
+		logger.alert(testObject);
+		let testString: string = testStream.read().toString();
+
+		return chai.expect(testString.substring(0, testString.length - 1)).not.contain('\n');
+	});
+	it("EMERGENCY should not log any newlines", () => {
+		// Log a test message
+		logger.emergency(testObject);
+		let testString: string = testStream.read().toString();
+
+		return chai.expect(testString.substring(0, testString.length - 1)).not.contain('\n');
+	});
+});
+
+describe("Logging an object with tabs set to false", () => {
+	// Set up the logger
+	let testStream = new stream.PassThrough();
+	let logger = new Logger({
+		tabs: false,
+		streams: [{ stream: testStream, color: true }] // Creates a logger with default settings, except logs it to our custom stream for testing
+	});
+	let testObject = {
+		text: "Nice String with \"some escaped\": characters"
+	}
+	it("DEBUG should log a multiline object using spaces", () => {
+		// Log a test message
+		logger.debug(testObject);
+
+		return chai.expect(testStream.read().toString()).to.match(/\s/);
+	});
+	it("INFO should log a multiline object using spaces", () => {
+		// Log a test message
+		logger.info(testObject);
+
+		return chai.expect(testStream.read().toString()).to.match(/\s/);
+	});
+	it("NOTICE should log a multiline object using spaces", () => {
+		// Log a test message
+		logger.note(testObject);
+
+		return chai.expect(testStream.read().toString()).to.match(/\s/);
+	});
+	it("WARNING should log a multiline object using spaces", () => {
+		// Log a test message
+		logger.warn(testObject);
+
+		return chai.expect(testStream.read().toString()).to.match(/\s/);
+	});
+	it("ERROR should log a multiline object using spaces", () => {
+		// Log a test message
+		logger.error(testObject);
+
+		return chai.expect(testStream.read().toString()).to.match(/\s/);
+	});
+	it("CRITICAL should log a multiline object using spaces", () => {
+		// Log a test message
+		logger.critical(testObject);
+
+		return chai.expect(testStream.read().toString()).to.match(/\s/);
+	});
+	it("ALERT should log a multiline object using spaces", () => {
+		// Log a test message
+		logger.alert(testObject);
+
+		return chai.expect(testStream.read().toString()).to.match(/\s/);
+	});
+	it("EMERGENCY should log a multiline object using spaces", () => {
+		// Log a test message
+		logger.emergency(testObject);
+
+		return chai.expect(testStream.read().toString()).to.match(/\s/);
+	});
+});

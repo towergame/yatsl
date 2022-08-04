@@ -53,6 +53,9 @@ export class LoggerConfig {
 	logLine?: boolean = true;
 	name?: string = "";
 	streams?: { stream: stream.Writable, color: boolean }[];
+	decimalDigits?: number = 3;
+	multilineObjects?: boolean = true;
+	tabs?: boolean = true;
 }
 
 const reset = "\x1b[0m";
@@ -69,6 +72,9 @@ export class Logger {
 		logLine: true,
 		name: "",
 		streams: [ { stream: process.stdout, color: true } ],
+		decimalDigits: 3,
+		multilineObjects: true,
+		tabs: true,
 	}
 
 	constructor(conf?: LoggerConfig) {
@@ -80,7 +86,7 @@ export class Logger {
 	 * @param data String(s) to log
 	 */
 	public emergency(...data: any[]) {
-		this.write(data.join(" | "), LogLevel.EMERGENCY);
+		this.write(data, LogLevel.EMERGENCY);
 	}
 
 	/**
@@ -88,7 +94,7 @@ export class Logger {
 	 * @param data String(s) to log
 	 */
 	public alert(...data: any[]) {
-		this.write(data.join(" | "), LogLevel.ALERT);
+		this.write(data, LogLevel.ALERT);
 	}
 
 	/**
@@ -96,7 +102,7 @@ export class Logger {
 	 * @param data String(s) to log
 	 */
 	public critical(...data: any[]) {
-		this.write(data.join(" | "), LogLevel.CRITICAL);
+		this.write(data, LogLevel.CRITICAL);
 	}
 
 	/**
@@ -104,7 +110,7 @@ export class Logger {
 	 * @param data String(s) to log
 	 */
 	public error(...data: any[]) {
-		this.write(data.join(" | "), LogLevel.ERROR);
+		this.write(data, LogLevel.ERROR);
 	}
 
 	/**
@@ -112,7 +118,7 @@ export class Logger {
 	 * @param data String(s) to log
 	 */
 	public warn(...data: any[]) {
-		this.write(data.join(" | "), LogLevel.WARNING);
+		this.write(data, LogLevel.WARNING);
 	}
 
 	/**
@@ -120,7 +126,7 @@ export class Logger {
 	 * @param data String(s) to log
 	 */
 	public note(...data: any[]) {
-		this.write(data.join(" | "), LogLevel.NOTICE);
+		this.write(data, LogLevel.NOTICE);
 	}
 
 	/**
@@ -128,7 +134,7 @@ export class Logger {
 	 * @param data String(s) to log
 	 */
 	public info(...data: any[]) {
-		this.write(data.join(" | "), LogLevel.INFO);
+		this.write(data, LogLevel.INFO);
 	}
 
 	/**
@@ -136,7 +142,7 @@ export class Logger {
 	 * @param data String(s) to log
 	 */
 	public debug(...data: any[]) {
-		this.write(data.join(" | "), LogLevel.DEBUG);
+		this.write(data, LogLevel.DEBUG);
 	}
 
 	public log(...data: any[]) { this.debug(...data) };
@@ -150,12 +156,70 @@ export class Logger {
 	}
 
 	/**
+	 * Highhlights a JSON string using ANSI characters.
+	 * @param json The JSON to highlight
+	 * @returns JSON with ANSI characters to highlight it
+	 */
+	private highlightJSON(json: string): string {
+		json = json
+			.replace(/(?<=\s|,|{)\"[^\"]+\"(?=:)/g, "\x1b[2m$&" + reset) // Highlight field names
+			.replace(/(?<=: |\s|:|,|\[)\d+(?!:|\d*m)/g, "\x1b[31m$&" + reset) // Highlight number values
+			.replace(/(?<=: |\s|:|,|\[)(true|false)(?!:)/g, "\x1b[33m$&" + reset) // Highlight bool values
+			.replace(/(?<=: |\s|:|,|\[)null(?!:)/g, "\x1b[35m$&" + reset) // Highlight null values
+			.replace(/(?<=: |\s|:|,|\[)"(?:\\\\|\\"|[\s\S])*?"(?!:)/g, "\x1b[32m$&" + reset) // Highlight string values
+		return json;
+	}
+
+	/**
+	 * Turns an object array into a JSON string
+	 * @param content The array to be stringified
+	 * @returns A JSON string of content
+	 */
+	private stringify(content: any[], recursive: boolean = false): string {
+		let result = "";
+		if (content.length > 1) {
+			// result += "[ ";
+			for (let x: number = 0; x < content.length; x++) {
+				result += this.stringify([content[x]], true);
+				if (x + 1 !== content.length) result += " | ";
+			}
+			// result += " ]";
+		} else if (content.length === 0) {
+			result = "[ ]"; /* If we're given an empty array, just return "[ ]" to indicate that it's empty.
+			            	   Hopefully that's what the user wanted and there isn't a horrible bug that passes an empty array to this function. */
+		} else {
+			switch (typeof (content[0])) {
+				case "string":
+					result = content[0];
+					break;
+				case "number":
+					result = (content[0] as number).toFixed(content[0] % 1 > 0 ? this.config.decimalDigits : 0);
+					break;
+				case "boolean":
+					result = content[0].toString();
+					break;
+				default:
+					if (recursive || !this.config.multilineObjects) {
+						result = JSON.stringify(content[0]);
+					} else {
+						result = "\n" + JSON.stringify(content[0], null, this.config.tabs ? '\t' : '\s\s');
+					}
+					result = this.highlightJSON(result);
+			}
+		}
+		return result;
+	}
+
+	/**
 	 * Writes a log message to STDOUT
-	 * @param message The message to log
+	 * @param rawMessage The message to log
 	 * @param severity The severity of log
 	 */
-	private write(message: string, severity: LogLevel) {
+	private write(rawMessage: any[], severity: LogLevel) {
 		if ((this.config.minLevel !== null || this.config.minLevel !== undefined) && this.config.minLevel! < severity) return;
+
+		let message = rawMessage.length > 0 ? this.stringify(rawMessage) : "";
+
 		let style = "";
 		switch (severity) {
 			case LogLevel.EMERGENCY:
