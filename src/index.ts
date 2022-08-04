@@ -162,11 +162,11 @@ export class Logger {
 	 */
 	private highlightJSON(json: string): string {
 		json = json
-			.replace(/\"[^\"]+\"(?=:)/g, "\x1b[2m$&" + reset) // Highlight field names
-			.replace(/(?<=: |\s|:|,|\[)"(\\\"|[^\"])+\"(?!:)/g, "\x1b[32m$&" + reset) // Highlight string values
+			.replace(/(?<=\s|,|{)\"[^\"]+\"(?=:)/g, "\x1b[2m$&" + reset) // Highlight field names
 			.replace(/(?<=: |\s|:|,|\[)\d+(?!:|\d*m)/g, "\x1b[31m$&" + reset) // Highlight number values
 			.replace(/(?<=: |\s|:|,|\[)(true|false)(?!:)/g, "\x1b[33m$&" + reset) // Highlight bool values
 			.replace(/(?<=: |\s|:|,|\[)null(?!:)/g, "\x1b[35m$&" + reset) // Highlight null values
+			.replace(/(?<=: |\s|:|,|\[)"(?:\\\\|\\"|[\s\S])*?"(?!:)/g, "\x1b[32m$&" + reset) // Highlight string values
 		return json;
 	}
 
