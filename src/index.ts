@@ -77,6 +77,8 @@ export class Logger {
 		tabs: true,
 	}
 
+	private override: LoggerConfig = {};
+
 	constructor(conf?: LoggerConfig) {
 		if (conf) this.config = { ...this.config, ...conf };
 	}
@@ -141,11 +143,19 @@ export class Logger {
 	 * Log a message with the severity of DEBUG
 	 * @param data String(s) to log
 	 */
-	public debug(...data: any[]) {
+	public debug(...data: any[]): void {
 		this.write(data, LogLevel.DEBUG);
 	}
 
-	public log(...data: any[]) { this.debug(...data) };
+	public log(first: any, ...data: any[]) { this.debug(first, ...data) };
+
+	/**
+	 * Temporarily overrides config options for the next call.
+	 * @param config Config values to override for next call
+	 */
+	public overrideConfig(config: LoggerConfig) {
+		this.override = config; // TODO: Figure out how to make config overrides passable to logger.debug, etc.
+	}
 
 	// Shamelessly stolen from a friend.
 	private getCallSignature(): string {
@@ -175,12 +185,12 @@ export class Logger {
 	 * @param content The array to be stringified
 	 * @returns A JSON string of content
 	 */
-	private stringify(content: any[], recursive: boolean = false): string {
+	private stringify(content: any[], actualConfig: LoggerConfig, recursive: boolean = false): string {
 		let result = "";
 		if (content.length > 1) {
 			// result += "[ ";
 			for (let x: number = 0; x < content.length; x++) {
-				result += this.stringify([content[x]], true);
+				result += this.stringify([content[x]], actualConfig, true);
 				if (x + 1 !== content.length) result += " | ";
 			}
 			// result += " ]";
@@ -193,16 +203,16 @@ export class Logger {
 					result = content[0];
 					break;
 				case "number":
-					result = (content[0] as number).toFixed(content[0] % 1 > 0 ? this.config.decimalDigits : 0);
+					result = (content[0] as number).toFixed(content[0] % 1 > 0 ? actualConfig.decimalDigits : 0);
 					break;
 				case "boolean":
 					result = content[0].toString();
 					break;
 				default:
-					if (recursive || !this.config.multilineObjects) {
+					if (recursive || !actualConfig.multilineObjects) {
 						result = JSON.stringify(content[0]);
 					} else {
-						result = "\n" + JSON.stringify(content[0], null, this.config.tabs ? '\t' : '\s\s');
+						result = "\n" + JSON.stringify(content[0], null, actualConfig.tabs ? '\t' : '\s\s');
 					}
 					result = this.highlightJSON(result);
 			}
@@ -216,9 +226,13 @@ export class Logger {
 	 * @param severity The severity of log
 	 */
 	private write(rawMessage: any[], severity: LogLevel) {
-		if ((this.config.minLevel !== null || this.config.minLevel !== undefined) && this.config.minLevel! < severity) return;
+		let actualConfig = { ...this.config, ...this.override };
+		if ((actualConfig.minLevel !== null || actualConfig.minLevel !== undefined) && actualConfig.minLevel! < severity) {
+			this.override = {};
+			return;
+		}
 
-		let message = rawMessage.length > 0 ? this.stringify(rawMessage) : "";
+		let message = rawMessage.length > 0 ? this.stringify(rawMessage, actualConfig) : "";
 
 		let style = "";
 		switch (severity) {
@@ -248,15 +262,17 @@ export class Logger {
 				break;
 		}
 		let line = "";
-		if (this.config.logLine) line += " | " + this.getCallSignature();
-		if (this.config.name !== "") line += " | " + this.config.name;
+		if (actualConfig.logLine) line += " | " + this.getCallSignature();
+		if (actualConfig.name !== "") line += " | " + actualConfig.name;
 
 		const ansiLogStr = `\x1b[2m${(new Date()).toISOString()}${reset} [${style}${reset}${line}] ${message}\n`;
 		const rawLogStr = stripAnsi(ansiLogStr);
 
-		this.config.streams?.forEach((stream) => {
+		actualConfig.streams?.forEach((stream) => {
 			stream.stream.write(stream.color ? ansiLogStr : rawLogStr);
 		});
+
+		this.override = {}; // Clear the override
 	}
 }
 
