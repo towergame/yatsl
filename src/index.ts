@@ -147,7 +147,13 @@ export class Logger {
 		this.write(data, LogLevel.DEBUG);
 	}
 
-	public log(first: any, ...data: any[]) { this.debug(first, ...data) };
+	/**
+	 * Log a message with the severity of DEBUG
+	 * @param data String(s) to log
+	 */
+	public log(...data: any[]) {
+		this.write(data, LogLevel.DEBUG); // TODO: Move this back to a logger.debug call once getCallSignature is revamped.
+	}
 
 	/**
 	 * Temporarily overrides config options for the next call.
