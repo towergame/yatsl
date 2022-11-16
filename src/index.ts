@@ -56,6 +56,7 @@ export class LoggerConfig {
 	decimalDigits?: number = 3;
 	multilineObjects?: boolean = true;
 	tabs?: boolean = true;
+	spaceCount?: number = 2;
 }
 
 const reset = "\x1b[0m";
@@ -218,7 +219,7 @@ export class Logger {
 					if (recursive || !actualConfig.multilineObjects) {
 						result = JSON.stringify(content[0]);
 					} else {
-						result = "\n" + JSON.stringify(content[0], null, actualConfig.tabs ? '	' : '  ');
+						result = "\n" + JSON.stringify(content[0], null, actualConfig.tabs ? '	' : ' '.repeat(actualConfig.spaceCount!));
 					}
 					result = this.highlightJSON(result);
 			}
