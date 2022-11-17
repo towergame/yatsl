@@ -219,7 +219,7 @@ export class Logger {
 					if (recursive || !actualConfig.multilineObjects) {
 						result = JSON.stringify(content[0]);
 					} else {
-						result = "\n" + JSON.stringify(content[0], null, actualConfig.tabs ? '	' : ' '.repeat(actualConfig.spaceCount!));
+						result = "\n" + JSON.stringify(content[0], undefined, "\n" + actualConfig.tabs ? '	' : ' '.repeat(actualConfig.spaceCount!));
 					}
 					result = this.highlightJSON(result);
 			}
