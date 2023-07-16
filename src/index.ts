@@ -186,6 +186,74 @@ export class Logger {
 		return json;
 	}
 
+	private stringifyItem(item: any, actualConfig: LoggerConfig, referenceArr: any[], recursive: boolean = false): string {
+		let result = "";
+		switch (typeof (item)) {
+			case "undefined":
+				result = "undefined";
+				break;
+			case "boolean":
+				result = item.toString();
+				break;
+			case "number":
+				result = (item as number).toFixed(item % 1 > 0 ? actualConfig.decimalDigits : 0);
+				break;
+			case "bigint":
+				result = item.toString();
+				break;
+			case "string":
+				// if the string is from the recursive call, 
+				// it means it's a stringified object, so we need to wrap it in quotes
+				result = recursive ? `"${item}"` : item;
+				break;
+			case "symbol":
+				// TODO: Figure out how to stringify symbols, whatever that means
+				result = "[symbol]";
+				break;
+			case "function":
+				// differentiate function from class
+				if(item.prototype && item.prototype.constructor.name !== "Function") {
+					result = `${item.prototype.constructor.name} ${this.stringifyItem(Object(item), actualConfig, referenceArr, true)}`;
+				} else {
+					result = "[Function item.name]";
+				}
+				break;
+			case "object":
+				if (item === null) {
+					// null is an object, so we need to check for it first
+					result = "null";
+					break;
+				}
+				// does this object have non-trivial references?
+				if (referenceArr.includes(item)) {
+					throw new Error("Complex object references are not supported.");	
+				}
+				referenceArr.push(item);
+				if (Array.isArray(item)) {
+					// check item is an array
+					result = "[";
+					item.forEach((element, index) => {
+						result += this.stringifyItem(element, actualConfig, referenceArr, true);
+						if (index + 1 !== item.length) result += ", ";
+					});
+					result += "]";
+				} else {
+					// item is a regular object
+					result = "{";
+					Object.keys(item).forEach((key, index) => {
+						result += `"${key}": ${this.stringifyItem(item[key], actualConfig, referenceArr, true)}`;
+						if (index + 1 !== Object.keys(item).length) result += ", ";
+					});
+					result += "}";
+				}
+				result = this.highlightJSON(result);
+				break;
+			default:
+				throw new Error(`Unknown type: ${typeof (item)}`);
+		}
+		return result;
+	}
+
 	/**
 	 * Turns an object array into a JSON string
 	 * @param content The array to be stringified
@@ -193,16 +261,16 @@ export class Logger {
 	 */
 	private stringify(content: any[], actualConfig: LoggerConfig, recursive: boolean = false): string {
 		let result = "";
-		if (content.length > 1) {
+		if (content.length === 0) {
+			result = "[ ]"; /* If we're given an empty array, just return "[ ]" to indicate that it's empty.
+			            	   Hopefully that's what the user wanted and there isn't a horrible bug that passes an empty array to this function. */
+		} else if (content.length > 1) {
 			// result += "[ ";
 			for (let x: number = 0; x < content.length; x++) {
 				result += this.stringify([content[x]], actualConfig, true);
 				if (x + 1 !== content.length) result += " | ";
 			}
 			// result += " ]";
-		} else if (content.length === 0) {
-			result = "[ ]"; /* If we're given an empty array, just return "[ ]" to indicate that it's empty.
-			            	   Hopefully that's what the user wanted and there isn't a horrible bug that passes an empty array to this function. */
 		} else {
 			switch (typeof (content[0])) {
 				case "string":
