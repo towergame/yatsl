@@ -215,12 +215,21 @@ export class Logger {
 					result = content[0].toString();
 					break;
 				default:
-					if (recursive || !actualConfig.multilineObjects) {
-						result = JSON.stringify(content[0]);
-					} else {
-						result = "\n" + JSON.stringify(content[0], null, actualConfig.tabs ? '\t' : '\s\s');
+					try {
+						if (recursive || !actualConfig.multilineObjects) {
+							result = JSON.stringify(content[0]);
+						} else {
+							result = "\n" + JSON.stringify(content[0], null, actualConfig.tabs ? '\t' : '\s\s');
+						}
+						result = this.highlightJSON(result);
+					} catch (err) {
+						if(err instanceof TypeError) {
+							result = "[ unserializable object ]";
+						} else {
+							throw err;
+						}
 					}
-					result = this.highlightJSON(result);
+					
 			}
 		}
 		return result;

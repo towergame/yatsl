@@ -102,3 +102,25 @@ describe("Logging an object with tabs set to false", () => {
 		return chai.expect(testStream.read().toString()).to.match(/ /);
 	});
 });
+
+describe("Logging unseriazable objects", () => {
+	let testStream = new stream.PassThrough();
+	let logger = new Logger({
+		minLevel: LogLevel.DEBUG,
+		streams: [{ stream: testStream, color: true }] // Creates a logger with default settings, except logs it to our custom stream for testing
+	});
+	it("logs [ unserializable object ] when passing an object referencing self", () => {
+		let obj: any = {};
+		obj.obj = obj;
+		logger.log(obj);
+		return chai.expect(testStream.read().toString()).to.match(/\[ unserializable object \]/);
+	});
+	it("logs [ unserializable object ] when passing objects referencing each other", () => {
+		let obj1: any = {};
+		let obj2: any = {};
+		obj1.obj = obj2;
+		obj2.obj = obj1;
+		logger.log(obj1);
+		return chai.expect(testStream.read().toString()).to.match(/\[ unserializable object \]/);
+	});
+});
