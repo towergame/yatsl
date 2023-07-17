@@ -56,6 +56,7 @@ export class LoggerConfig {
 	decimalDigits?: number = 3;
 	multilineObjects?: boolean = true;
 	tabs?: boolean = true;
+	carriageReturn?: boolean = false;
 }
 
 const reset = "\x1b[0m";
@@ -75,6 +76,7 @@ export class Logger {
 		decimalDigits: 3,
 		multilineObjects: true,
 		tabs: true,
+		carriageReturn: false
 	}
 
 	private override: LoggerConfig = {};
@@ -186,7 +188,11 @@ export class Logger {
 		return json;
 	}
 
-	private stringifyItem(item: any, actualConfig: LoggerConfig, referenceArr: any[], recursive: boolean = false): string {
+	private stringifyItem(item: any, actualConfig: LoggerConfig, referenceArr: any[], depth: number = 0): string {
+		const whitespace = actualConfig.tabs ? "\t" : "  ";
+		const lineStartWhitespace = whitespace.repeat(depth);
+		const newline = actualConfig.carriageReturn ? "\r\n" : "\n";
+		const itemSeperator = (actualConfig.multilineObjects ? (newline + lineStartWhitespace) : whitespace);
 		let result = "";
 		switch (typeof (item)) {
 			case "undefined":
@@ -204,7 +210,7 @@ export class Logger {
 			case "string":
 				// if the string is from the recursive call, 
 				// it means it's a stringified object, so we need to wrap it in quotes
-				result = recursive ? `"${item}"` : item;
+				result = depth!==0 ? `"${item}"` : item;
 				break;
 			case "symbol":
 				// TODO: Figure out how to stringify symbols, whatever that means
@@ -213,9 +219,9 @@ export class Logger {
 			case "function":
 				// differentiate function from class
 				if(item.prototype && item.prototype.constructor.name !== "Function") {
-					result = `${item.prototype.constructor.name} ${this.stringifyItem(Object(item), actualConfig, referenceArr, true)}`;
+					result = `${item.prototype.constructor.name} ${this.stringifyItem(Object(item), actualConfig, referenceArr, depth+1)}`;
 				} else {
-					result = "[Function item.name]";
+					result = `[Function ${item.name}]`;
 				}
 				break;
 			case "object":
@@ -226,25 +232,30 @@ export class Logger {
 				}
 				// does this object have non-trivial references?
 				if (referenceArr.includes(item)) {
-					throw new Error("Complex object references are not supported.");	
+					result = "[unserializable object]";
 				}
 				referenceArr.push(item);
 				if (Array.isArray(item)) {
 					// check item is an array
-					result = "[";
-					item.forEach((element, index) => {
-						result += this.stringifyItem(element, actualConfig, referenceArr, true);
-						if (index + 1 !== item.length) result += ", ";
-					});
-					result += "]";
+					
+					if(item.length === 0) result = "[ ]"; // empty array
+					else {
+						result = "[" + itemSeperator;
+						item.forEach((element, index) => {
+							result += whitespace + this.stringifyItem(element, actualConfig, referenceArr, depth+1);
+							if (index + 1 !== item.length) result += "," + itemSeperator;
+						});
+						result += itemSeperator + "]";
+					}
+					
 				} else {
 					// item is a regular object
-					result = "{";
+					result = "{" + itemSeperator;
 					Object.keys(item).forEach((key, index) => {
-						result += `"${key}": ${this.stringifyItem(item[key], actualConfig, referenceArr, true)}`;
-						if (index + 1 !== Object.keys(item).length) result += ", ";
+						result += `${whitespace}"${key}": ${this.stringifyItem(item[key], actualConfig, referenceArr, depth+1)}`;
+						if (index + 1 !== Object.keys(item).length) result += "," + itemSeperator;
 					});
-					result += "}";
+					result += itemSeperator + "}";
 				}
 				result = this.highlightJSON(result);
 				break;
@@ -260,36 +271,27 @@ export class Logger {
 	 * @returns A JSON string of content
 	 */
 	private stringify(content: any[], actualConfig: LoggerConfig, recursive: boolean = false): string {
+		let references: any[] = [];
 		let result = "";
 		if (content.length === 0) {
-			result = "[ ]"; /* If we're given an empty array, just return "[ ]" to indicate that it's empty.
-			            	   Hopefully that's what the user wanted and there isn't a horrible bug that passes an empty array to this function. */
+			if(recursive) {
+				result = "[ ]";
+				/* If we're given an empty array, just return "[ ]" to indicate that it's empty.
+				Hopefully that's what the user wanted and there isn't a horrible bug that passes an empty array to this function. */
+			} else {
+				result = "";
+				/* If this isn't the top level call, we don't want to return anything.
+				It could be useful for just printing a timestamp or something. */
+			}
+		} else if (content.length === 1) {
+			result = this.stringifyItem(content[0], actualConfig, references, 0);
 		} else if (content.length > 1) {
 			// result += "[ ";
 			for (let x: number = 0; x < content.length; x++) {
-				result += this.stringify([content[x]], actualConfig, true);
+				result += this.stringifyItem(content[x], actualConfig, references, 0);
 				if (x + 1 !== content.length) result += " | ";
 			}
 			// result += " ]";
-		} else {
-			switch (typeof (content[0])) {
-				case "string":
-					result = content[0];
-					break;
-				case "number":
-					result = (content[0] as number).toFixed(content[0] % 1 > 0 ? actualConfig.decimalDigits : 0);
-					break;
-				case "boolean":
-					result = content[0].toString();
-					break;
-				default:
-					if (recursive || !actualConfig.multilineObjects) {
-						result = JSON.stringify(content[0]);
-					} else {
-						result = "\n" + JSON.stringify(content[0], null, actualConfig.tabs ? '\t' : '\s\s');
-					}
-					result = this.highlightJSON(result);
-			}
 		}
 		return result;
 	}
