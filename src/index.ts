@@ -270,22 +270,19 @@ export class Logger {
 	 * @param content The array to be stringified
 	 * @returns A JSON string of content
 	 */
-	private stringify(content: any[], actualConfig: LoggerConfig, recursive: boolean = false): string {
+	private stringify(content: any[], actualConfig: LoggerConfig): string {
 		let references: any[] = [];
 		let result = "";
 		if (content.length === 0) {
-			if(recursive) {
-				result = "[ ]";
-				/* If we're given an empty array, just return "[ ]" to indicate that it's empty.
-				Hopefully that's what the user wanted and there isn't a horrible bug that passes an empty array to this function. */
-			} else {
-				result = "";
-				/* If this isn't the top level call, we don't want to return anything.
-				It could be useful for just printing a timestamp or something. */
-			}
+			result = "";
+			// an empty array means that the user just called logger.log() with no arguments.
+			// we don't want to log anything in this case.
+			// the timestamp and line number will still be printed, though.
 		} else if (content.length === 1) {
 			result = this.stringifyItem(content[0], actualConfig, references, 0);
 		} else if (content.length > 1) {
+			// disable multilineObjects for multiple items
+			actualConfig.multilineObjects = false;
 			// result += "[ ";
 			for (let x: number = 0; x < content.length; x++) {
 				result += this.stringifyItem(content[x], actualConfig, references, 0);
