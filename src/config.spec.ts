@@ -88,3 +88,63 @@ describe("Logging with an option override setting minLevel to EMERGENCY", () => 
 		return chai.expect(a).to.not.equal(null).and.equal(b);
 	});
 });
+
+describe("Logging with allowLists", () => {
+	// Set up the logger
+	let testStream1 = new stream.PassThrough();
+	let testStream2 = new stream.PassThrough();
+	let testStream3 = new stream.PassThrough();
+	let logger = new Logger({
+		streams: [
+			{ stream: testStream1, color: true, allowList: [LogLevel.INFO] },
+			{ stream: testStream2, color: true, allowList: [] },
+			{ stream: testStream3, color: true, allowList: [LogLevel.WARNING, LogLevel.DEBUG] },
+		]
+	});
+	logger.debug("test1");
+	logger.info("test2");
+	logger.note("test3");
+	logger.warn("test4");
+	const str = testStream1.read().toString();
+	it("The logger should log to the first stream only on test2", () => {
+		return chai.expect(str).to.contain("test2").and.not.to.contain("test1").and.contain("test3").and.contain("test4");
+	});
+	const str2 = testStream2.read();
+	it("The logger should not log to the second stream", () => {
+		return chai.expect(str2).to.equal(null);
+	});
+	const str3 = testStream3.read().toString();
+	it("The logger should log to the third stream only on test1 and test3", () => {
+		return chai.expect(str3).to.contain("test1").and.to.contain("test4").and.not.to.contain("test2").and.contain("test3");
+	});
+});
+
+describe("Logging with blockLists", () => {
+	// Set up the logger
+	let testStream1 = new stream.PassThrough();
+	let testStream2 = new stream.PassThrough();
+	let testStream3 = new stream.PassThrough();
+	let logger = new Logger({
+		streams: [
+			{ stream: testStream1, color: true, blockList: [LogLevel.INFO] },
+			{ stream: testStream2, color: true, blockList: [] },
+			{ stream: testStream3, color: true, blockList: [LogLevel.WARNING, LogLevel.DEBUG] },
+		]
+	});
+	logger.debug("test1");
+	logger.info("test2");
+	logger.note("test3");
+	logger.warn("test4");
+	const str = testStream1.read().toString();
+	it("The logger should log to the first stream only on test2", () => {
+		return chai.expect(str).to.contain("test1").and.to.contain("test3").and.contain("test4").and.not.contain("test2");
+	});
+	const str2 = testStream2.read().toString();
+	it("The logger should not log to the second stream", () => {
+		return chai.expect(str2).to.contain("test2").and.to.contain("test1").and.contain("test3").and.contain("test4");
+	});
+	const str3 = testStream3.read().toString();
+	it("The logger should log to the third stream only on test2 and test3", () => {
+		return chai.expect(str3).to.contain("test2").and.to.contain("test3").and.not.to.contain("test1").and.contain("test4");
+	});
+});
