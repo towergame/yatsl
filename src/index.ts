@@ -188,7 +188,15 @@ export class Logger {
 		return json;
 	}
 
-	private stringifyItem(item: any, actualConfig: LoggerConfig, referenceArr: any[], depth: number = 0): string {
+	/**
+	 * Turns an object into a string 
+	 * @param item The item to be stringified
+	 * @param actualConfig The config to use for stringification
+	 * @param referenceArr An array of references to check for circular references
+	 * @param depth The depth of the current item (used for indentation and reference checking)
+	 * @returns A JSON-adjacent string of item
+	 **/
+	private stringifyItem(item: any, actualConfig: LoggerConfig, referenceArr: Array<[any, number]>, depth: number = 0): string {
 		const whitespace = actualConfig.tabs ? "\t" : "  ";
 		const lineStartWhitespace = whitespace.repeat(depth);
 		const newline = actualConfig.carriageReturn ? "\r\n" : "\n";
@@ -218,8 +226,20 @@ export class Logger {
 				break;
 			case "function":
 				// differentiate function from class
-				if(item.prototype && item.prototype.constructor.name !== "Function") {
-					result = `${item.prototype.constructor.name} ${this.stringifyItem(Object(item), actualConfig, referenceArr, depth+1)}`;
+				{
+					let hasNonTrivialReferences = false;
+					for(let i=0;i<referenceArr.length;i++) {
+						if(referenceArr[i][0] === item && depth > referenceArr[i][1]) {
+							result = "[unserializable object]";
+							hasNonTrivialReferences = true;
+							break;
+						}
+					}
+					if(hasNonTrivialReferences) break;
+				}
+				referenceArr.push([item, depth]);
+				if(item.name[0].toUpperCase()===item.name[0]) {
+					result = `[Class ${item.prototype.constructor.name}]`;
 				} else {
 					result = `[Function ${item.name}]`;
 				}
@@ -231,10 +251,20 @@ export class Logger {
 					break;
 				}
 				// does this object have non-trivial references?
-				if (referenceArr.includes(item)) {
-					result = "[unserializable object]";
+				{
+					let hasNonTrivialReferences = false;
+					for(let i=0;i<referenceArr.length;i++) {
+						if(referenceArr[i][0] === item && depth > referenceArr[i][1]) {
+							result = "[unserializable object]";
+							hasNonTrivialReferences = true;
+							referenceArr[i][1] = depth;
+							break;
+						}
+					}
+					if(hasNonTrivialReferences) break;
 				}
-				referenceArr.push(item);
+				
+				referenceArr.push([item, depth]);
 				if (Array.isArray(item)) {
 					// check item is an array
 					
@@ -250,7 +280,11 @@ export class Logger {
 					
 				} else {
 					// item is a regular object
-					result = "{" + itemSeperator;
+
+					// check if item is a class instance
+					if(item.constructor.name !== "Object") result = item.constructor.name + whitespace;
+					else result = "";
+					result += "{" + itemSeperator;
 					Object.keys(item).forEach((key, index) => {
 						result += `${whitespace}"${key}": ${this.stringifyItem(item[key], actualConfig, referenceArr, depth+1)}`;
 						if (index + 1 !== Object.keys(item).length) result += "," + itemSeperator;
@@ -266,9 +300,9 @@ export class Logger {
 	}
 
 	/**
-	 * Turns an object array into a JSON string
+	 * Turns an object array into a string
 	 * @param content The array to be stringified
-	 * @returns A JSON string of content
+	 * @returns A JSON-adjacent string of content
 	 */
 	private stringify(content: any[], actualConfig: LoggerConfig): string {
 		let references: any[] = [];
