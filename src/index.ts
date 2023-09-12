@@ -49,12 +49,61 @@ export enum LogLevel {
  * The config object for the Logger, pass to the constructer or Logger.config field in order to customise the Logger.
  */
 export class LoggerConfig {
+	/**
+	 * The minimum log level to log. Anything below this level will not be logged.
+	 */
 	minLevel?: LogLevel = LogLevel.INFO;
+
+	/**
+	 * Whether or not to log the line of code that called the logger.
+	 */
 	logLine?: boolean = true;
+	
+	/**
+	 * The name of the logger, used to identify the logger in the log line.
+	 */
 	name?: string = "";
-	streams?: { stream: stream.Writable, color: boolean }[];
+
+	/**
+	 * List of streams to log to.
+	 */
+	streams?: { 
+		/**
+		 * The stream to log to
+		 */
+		stream: stream.Writable,
+
+		/**
+		 * Whether or not to use ANSI escape codes to color the log.
+		 */
+		color: boolean,
+
+		/**
+		 * List of log levels to allow. If this is set, only the log levels in this list will be logged.
+		 */
+		allowList?: LogLevel[],
+
+		/**
+		 * List of log levels to block. If this is set, all log levels except the ones in this list will be logged.
+		 */
+		blockList?: LogLevel[] 
+	}[];
+
+	/**
+	 * The number of decimal digits to log for numbers.
+	 */
 	decimalDigits?: number = 3;
+
+	/**
+	 * Whether or not to log objects on multiple lines. When logging multiple items,
+	 * all items will be logged on a single line regardless.
+	 */
 	multilineObjects?: boolean = true;
+
+	/**
+	 * Whether or not to use tabs when logging objects.
+	 * If false, spaces will be used instead.
+	 */
 	tabs?: boolean = true;
 }
 
@@ -275,6 +324,8 @@ export class Logger {
 		const rawLogStr = stripAnsi(ansiLogStr);
 
 		actualConfig.streams?.forEach((stream) => {
+			if (stream.allowList && !stream.allowList.includes(severity)) return;
+			if (stream.blockList && stream.blockList.includes(severity)) return;
 			stream.stream.write(stream.color ? ansiLogStr : rawLogStr);
 		});
 
