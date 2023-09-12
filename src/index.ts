@@ -76,6 +76,7 @@ export class Logger {
 		decimalDigits: 3,
 		multilineObjects: true,
 		tabs: true,
+		spaceCount: 2
 	}
 
 	private override: LoggerConfig = {};
@@ -219,7 +220,7 @@ export class Logger {
 					if (recursive || !actualConfig.multilineObjects) {
 						result = JSON.stringify(content[0]);
 					} else {
-						result = "\n" + JSON.stringify(content[0], undefined, "\n" + actualConfig.tabs ? '	' : ' '.repeat(actualConfig.spaceCount!));
+						result = "\n" + JSON.stringify(content[0], undefined, (actualConfig.tabs ? '	' : ' '.repeat(actualConfig.spaceCount!)));
 					}
 					result = this.highlightJSON(result);
 			}

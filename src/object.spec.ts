@@ -100,7 +100,7 @@ describe("Logging an object with tabs set to false", () => {
 		// Log a test message
 		logger.log(testObject);
 
-		return chai.expect(testStream.read().toString()).to.match(/\n\s+/g);
+		return chai.expect(testStream.read().toString()).to.match(/\n +/g);
 	});
 });
 
@@ -119,6 +119,6 @@ describe("Logging an object with space indent set to 3", () => {
 		// Log a test message
 		logger.log(testObject);
 
-		return chai.expect(testStream.read().toString()).to.match(/\n\s{3}/g);
+		return chai.expect(testStream.read().toString()).to.match(/\n {3}/g);
 	});
 });
