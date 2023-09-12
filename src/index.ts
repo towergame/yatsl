@@ -105,6 +105,7 @@ export class LoggerConfig {
 	 * If false, spaces will be used instead.
 	 */
 	tabs?: boolean = true;
+	carriageReturn?: boolean = false;
 }
 
 const reset = "\x1b[0m";
@@ -124,6 +125,7 @@ export class Logger {
 		decimalDigits: 3,
 		multilineObjects: true,
 		tabs: true,
+		carriageReturn: false
 	}
 
 	private override: LoggerConfig = {};
@@ -236,41 +238,140 @@ export class Logger {
 	}
 
 	/**
-	 * Turns an object array into a JSON string
-	 * @param content The array to be stringified
-	 * @returns A JSON string of content
-	 */
-	private stringify(content: any[], actualConfig: LoggerConfig, recursive: boolean = false): string {
+	 * Turns an object into a string 
+	 * @param item The item to be stringified
+	 * @param actualConfig The config to use for stringification
+	 * @param referenceArr An array of references to check for circular references
+	 * @param depth The depth of the current item (used for indentation and reference checking)
+	 * @returns A JSON-adjacent string of item
+	 **/
+	private stringifyItem(item: any, actualConfig: LoggerConfig, referenceArr: Array<[any, number]>, depth: number = 0): string {
+		const whitespace = actualConfig.tabs ? "\t" : "  ";
+		const lineStartWhitespace = whitespace.repeat(depth);
+		const newline = actualConfig.carriageReturn ? "\r\n" : "\n";
+		const itemSeperator = (actualConfig.multilineObjects ? (newline + lineStartWhitespace) : whitespace);
 		let result = "";
-		if (content.length > 1) {
+		switch (typeof (item)) {
+			case "undefined":
+				result = "undefined";
+				break;
+			case "boolean":
+				result = item.toString();
+				break;
+			case "number":
+				result = (item as number).toFixed(item % 1 > 0 ? actualConfig.decimalDigits : 0);
+				break;
+			case "bigint":
+				result = item.toString();
+				break;
+			case "string":
+				// if the string is from the recursive call, 
+				// it means it's a stringified object, so we need to wrap it in quotes
+				result = depth!==0 ? `"${item}"` : item;
+				break;
+			case "symbol":
+				// TODO: Figure out how to stringify symbols, whatever that means
+				result = "[symbol]";
+				break;
+			case "function":
+				// differentiate function from class
+				{
+					let hasNonTrivialReferences = false;
+					for(let i=0;i<referenceArr.length;i++) {
+						if(referenceArr[i][0] === item && depth > referenceArr[i][1]) {
+							result = "[unserializable object]";
+							hasNonTrivialReferences = true;
+							break;
+						}
+					}
+					if(hasNonTrivialReferences) break;
+				}
+				referenceArr.push([item, depth]);
+				if(item.name[0].toUpperCase()===item.name[0]) {
+					result = `[Class ${item.prototype.constructor.name}]`;
+				} else {
+					result = `[Function ${item.name}]`;
+				}
+				break;
+			case "object":
+				if (item === null) {
+					// null is an object, so we need to check for it first
+					result = "null";
+					break;
+				}
+				// does this object have non-trivial references?
+				{
+					let hasNonTrivialReferences = false;
+					for(let i=0;i<referenceArr.length;i++) {
+						if(referenceArr[i][0] === item && depth > referenceArr[i][1]) {
+							result = "[unserializable object]";
+							hasNonTrivialReferences = true;
+							referenceArr[i][1] = depth;
+							break;
+						}
+					}
+					if(hasNonTrivialReferences) break;
+				}
+				
+				referenceArr.push([item, depth]);
+				if (Array.isArray(item)) {
+					// check item is an array
+					
+					if(item.length === 0) result = "[ ]"; // empty array
+					else {
+						result = "[" + itemSeperator;
+						item.forEach((element, index) => {
+							result += whitespace + this.stringifyItem(element, actualConfig, referenceArr, depth+1);
+							if (index + 1 !== item.length) result += "," + itemSeperator;
+						});
+						result += itemSeperator + "]";
+					}
+					
+				} else {
+					// item is a regular object
+
+					// check if item is a class instance
+					if(item.constructor.name !== "Object") result = item.constructor.name + whitespace;
+					else result = "";
+					result += "{" + itemSeperator;
+					Object.keys(item).forEach((key, index) => {
+						result += `${whitespace}"${key}": ${this.stringifyItem(item[key], actualConfig, referenceArr, depth+1)}`;
+						if (index + 1 !== Object.keys(item).length) result += "," + itemSeperator;
+					});
+					result += itemSeperator + "}";
+				}
+				result = this.highlightJSON(result);
+				break;
+			default:
+				throw new Error(`Unknown type: ${typeof (item)}`);
+		}
+		return result;
+	}
+
+	/**
+	 * Turns an object array into a string
+	 * @param content The array to be stringified
+	 * @returns A JSON-adjacent string of content
+	 */
+	private stringify(content: any[], actualConfig: LoggerConfig): string {
+		let references: any[] = [];
+		let result = "";
+		if (content.length === 0) {
+			result = "";
+			// an empty array means that the user just called logger.log() with no arguments.
+			// we don't want to log anything in this case.
+			// the timestamp and line number will still be printed, though.
+		} else if (content.length === 1) {
+			result = this.stringifyItem(content[0], actualConfig, references, 0);
+		} else if (content.length > 1) {
+			// disable multilineObjects for multiple items
+			actualConfig.multilineObjects = false;
 			// result += "[ ";
 			for (let x: number = 0; x < content.length; x++) {
-				result += this.stringify([content[x]], actualConfig, true);
+				result += this.stringifyItem(content[x], actualConfig, references, 0);
 				if (x + 1 !== content.length) result += " | ";
 			}
 			// result += " ]";
-		} else if (content.length === 0) {
-			result = "[ ]"; /* If we're given an empty array, just return "[ ]" to indicate that it's empty.
-			            	   Hopefully that's what the user wanted and there isn't a horrible bug that passes an empty array to this function. */
-		} else {
-			switch (typeof (content[0])) {
-				case "string":
-					result = content[0];
-					break;
-				case "number":
-					result = (content[0] as number).toFixed(content[0] % 1 > 0 ? actualConfig.decimalDigits : 0);
-					break;
-				case "boolean":
-					result = content[0].toString();
-					break;
-				default:
-					if (recursive || !actualConfig.multilineObjects) {
-						result = JSON.stringify(content[0]);
-					} else {
-						result = "\n" + JSON.stringify(content[0], null, actualConfig.tabs ? '\t' : '\s\s');
-					}
-					result = this.highlightJSON(result);
-			}
 		}
 		return result;
 	}

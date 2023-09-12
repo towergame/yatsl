@@ -41,6 +41,7 @@ This allows for fine-tuning of log options during creation of the logger. It sho
 | decimalDigits | number			   | Defines how many digits to render after the comma for numbers passed to the logger. |
 | multilineObjects | boolean			   | Whether to output object JSON representations in multiple lines or a single one, if the logger is given multiple values to log, objects will always be rendered in a single line. |
 | tabs | boolean			   | Whether to use tabs (true) or spaces (false) for multi-line JSON. |
+| carriageReturn | boolean | Whether to use \<CR\> before the newline characters. Useful for older or more basic consoles. False by default. |
 
 # Overriding the Config for a Single Call
 The config can also be overriden for a single call through the use of `logger.overrideConfig`, by passing it a config object with some of the options above, the logger will use these options for the next call. After the call, it will return to its usual options defined in the `config` field.
