@@ -1,10 +1,4 @@
-import stream from "stream";
-import process from "process";
 import {LogLevel} from "./LogLevel";
-
-function stripAnsi(ansiString: string) {
-	return JSON.parse(JSON.stringify(ansiString).replace(/\\u001b\[(\d+;)*\d+m/g, ""));
-}
 
 /**
  * The config object for the Logger, pass to the constructer or Logger.config field in order to customise the Logger.
@@ -26,31 +20,6 @@ export class LoggerConfig {
 	name?: string = "";
 
 	/**
-	 * List of streams to log to.
-	 */
-	streams?: { 
-		/**
-		 * The stream to log to
-		 */
-		stream: stream.Writable,
-
-		/**
-		 * Whether or not to use ANSI escape codes to color the log.
-		 */
-		color: boolean,
-
-		/**
-		 * List of log levels to allow. If this is set, only the log levels in this list will be logged.
-		 */
-		allowList?: LogLevel[],
-
-		/**
-		 * List of log levels to block. If this is set, all log levels except the ones in this list will be logged.
-		 */
-		blockList?: LogLevel[] 
-	}[];
-
-	/**
 	 * The number of decimal digits to log for numbers.
 	 */
 	decimalDigits?: number = 3;
@@ -69,8 +38,6 @@ export class LoggerConfig {
 	spaceCount?: number = 2;
 }
 
-const reset = "\x1b[0m";
-
 /**
  * The Logger class, it can be used to instantiate multiple instances of the Logger for extra customisability.
  */
@@ -82,7 +49,6 @@ export class Logger {
 		minLevel: LogLevel.DEBUG,
 		logLine: true,
 		name: "",
-		streams: [ { stream: process.stdout, color: true } ],
 		decimalDigits: 3,
 		multilineObjects: true,
 		tabs: true,
@@ -184,61 +150,6 @@ export class Logger {
 	}
 
 	/**
-	 * Highhlights a JSON string using ANSI characters.
-	 * @param json The JSON to highlight
-	 * @returns JSON with ANSI characters to highlight it
-	 */
-	private highlightJSON(json: string): string {
-		json = json
-			.replace(/(?<=\s|,|{)\"[^\"]+\"(?=:)/g, "\x1b[2m$&" + reset) // Highlight field names
-			.replace(/(?<=: |\s|:|,|\[)\d+(?!:|\d*m)/g, "\x1b[31m$&" + reset) // Highlight number values
-			.replace(/(?<=: |\s|:|,|\[)(true|false)(?!:)/g, "\x1b[33m$&" + reset) // Highlight bool values
-			.replace(/(?<=: |\s|:|,|\[)null(?!:)/g, "\x1b[35m$&" + reset) // Highlight null values
-			.replace(/(?<=: |\s|:|,|\[)"(?:\\\\|\\"|[\s\S])*?"(?!:)/g, "\x1b[32m$&" + reset) // Highlight string values
-		return json;
-	}
-
-	/**
-	 * Turns an object array into a JSON string
-	 * @param content The array to be stringified
-	 * @returns A JSON string of content
-	 */
-	private stringify(content: any[], actualConfig: LoggerConfig, recursive: boolean = false): string {
-		let result = "";
-		if (content.length > 1) {
-			// result += "[ ";
-			for (let x: number = 0; x < content.length; x++) {
-				result += this.stringify([content[x]], actualConfig, true);
-				if (x + 1 !== content.length) result += " | ";
-			}
-			// result += " ]";
-		} else if (content.length === 0) {
-			result = "[ ]"; /* If we're given an empty array, just return "[ ]" to indicate that it's empty.
-			            	   Hopefully that's what the user wanted and there isn't a horrible bug that passes an empty array to this function. */
-		} else {
-			switch (typeof (content[0])) {
-				case "string":
-					result = content[0];
-					break;
-				case "number":
-					result = (content[0] as number).toFixed(content[0] % 1 > 0 ? actualConfig.decimalDigits : 0);
-					break;
-				case "boolean":
-					result = content[0].toString();
-					break;
-				default:
-					if (recursive || !actualConfig.multilineObjects) {
-						result = JSON.stringify(content[0]);
-					} else {
-						result = "\n" + JSON.stringify(content[0], undefined, (actualConfig.tabs ? '	' : ' '.repeat(actualConfig.spaceCount!)));
-					}
-					result = this.highlightJSON(result);
-			}
-		}
-		return result;
-	}
-
-	/**
 	 * Writes a log message to STDOUT
 	 * @param rawMessage The message to log
 	 * @param severity The severity of log
@@ -250,47 +161,51 @@ export class Logger {
 			return;
 		}
 
-		let message = rawMessage.length > 0 ? this.stringify(rawMessage, actualConfig) : "";
-
+		let level = "";
 		let style = "";
 		switch (severity) {
 			case LogLevel.EMERGENCY:
-				style = "\x1b[1;5;30;41m" + "emer";
+				level = "emer";
+				style = "font-weight: bold; background-color: Black; color: Red;";
 				break;
 			case LogLevel.ALERT:
-				style = "\x1b[1;30;41m" + "alert";
+				level = "alert";
+				style = "font-weight: bold; background-color: Black; color: Yellow;";
 				break;
 			case LogLevel.CRITICAL:
-				style = "\x1b[1;31m" + "crit";
+				level = "crit";
+				style = "font-weight: bold; background-color: #FF0000; color: Black;";
 				break;
 			case LogLevel.ERROR:
-				style = "\x1b[31m" + "err";
+				level = "err";
+				style = "font-weight: bold; background-color: #FFAAAA; color: Black;";
 				break;
 			case LogLevel.WARNING:
-				style = "\x1b[33m" + "warn";
+				level = "warn";
+				style = "font-weight: bold; background-color: #FFFFAA; color: Black;";
 				break;
 			case LogLevel.NOTICE:
-				style = "\x1b[34m" + "note";
+				level = "note";
+				style = "font-weight: bold; background-color: White; color: Black;";
 				break;
 			case LogLevel.INFO:
-				style = "info";
+				level = "info";
+				style = "";
 				break;
 			case LogLevel.DEBUG:
-				style = "\x1b[22m" + "debug";
+				level = "debug";
+				style = "color: Gray;";
 				break;
 		}
 		let line = "";
 		if (actualConfig.logLine) line += " | " + this.getCallSignature();
 		if (actualConfig.name !== "") line += " | " + actualConfig.name;
 
-		const ansiLogStr = `\x1b[2m${(new Date()).toISOString()}${reset} [${style}${reset}${line}] ${message}\n`;
-		const rawLogStr = stripAnsi(ansiLogStr);
+		const ansiLogStr = `${(new Date()).toISOString()} [${style} | ${line}]`;
 
-		actualConfig.streams?.forEach((stream) => {
-			if (stream.allowList && !stream.allowList.includes(severity)) return;
-			if (stream.blockList && stream.blockList.includes(severity)) return;
-			stream.stream.write(stream.color ? ansiLogStr : rawLogStr);
-		});
+		// Just use console.log, I don't think there's any point in doing anything else :P
+		console.log('%c' + ansiLogStr, style);
+		console.log('%c' + rawMessage, style);
 
 		this.override = {}; // Clear the override
 	}
