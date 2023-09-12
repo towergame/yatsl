@@ -105,6 +105,7 @@ export class LoggerConfig {
 	 * If false, spaces will be used instead.
 	 */
 	tabs?: boolean = true;
+	spaceCount?: number = 2;
 }
 
 const reset = "\x1b[0m";
@@ -124,6 +125,7 @@ export class Logger {
 		decimalDigits: 3,
 		multilineObjects: true,
 		tabs: true,
+		spaceCount: 2
 	}
 
 	private override: LoggerConfig = {};
@@ -267,7 +269,7 @@ export class Logger {
 					if (recursive || !actualConfig.multilineObjects) {
 						result = JSON.stringify(content[0]);
 					} else {
-						result = "\n" + JSON.stringify(content[0], null, actualConfig.tabs ? '\t' : '\s\s');
+						result = "\n" + JSON.stringify(content[0], undefined, (actualConfig.tabs ? '	' : ' '.repeat(actualConfig.spaceCount!)));
 					}
 					result = this.highlightJSON(result);
 			}

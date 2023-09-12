@@ -93,12 +93,32 @@ describe("Logging an object with tabs set to false", () => {
 		streams: [{ stream: testStream, color: true }] // Creates a logger with default settings, except logs it to our custom stream for testing
 	});
 	let testObject = {
-		text: "Nice String with \"some escaped\": characters"
+		text: "Nice String with \"some escaped\": characters",
+		integer: 13
 	}
 	it("The logger should log a multiline object using spaces", () => {
 		// Log a test message
 		logger.log(testObject);
 
-		return chai.expect(testStream.read().toString()).to.match(/ /);
+		return chai.expect(testStream.read().toString()).to.match(/\n +/g);
+	});
+});
+
+describe("Logging an object with space indent set to 3", () => {
+	// Set up the logger
+	let testStream = new stream.PassThrough();
+	let logger = new Logger({
+		tabs: false,
+		spaceCount: 3,
+		streams: [{ stream: testStream, color: true }] // Creates a logger with default settings, except logs it to our custom stream for testing
+	});
+	let testObject = {
+		text: "Nice String with \"some escaped\": characters"
+	}
+	it("The logger should log a multiline object using 3 spaces", () => {
+		// Log a test message
+		logger.log(testObject);
+
+		return chai.expect(testStream.read().toString()).to.match(/\n {3}/g);
 	});
 });
