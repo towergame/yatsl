@@ -77,7 +77,72 @@ describe("Logging a complex object with default settings", () => {
 		return chai.expect(str).to.match(/"s_instance":\s*S\s*\{\s*"_de"\s*:\s*"de"\s*\}/g);
 	});
 	it("logging circular reference", () => {
-		console.log(str);
-		return chai.expect(str).to.contain("\"funny\": [non-trivial reference]");
+		return chai.expect(str).to.contain("\"funny\": [circular reference]");
 	});
+});
+
+describe("Logging a cyclic object with default settings", () => {
+	// Set up the logger
+	let testStream = new stream.PassThrough();
+	let logger = new Logger({
+		streams: [{ stream: testStream, color: false }], // Creates a logger with default settings, except logs it to our custom stream for testing
+
+	});
+	let testObject = {
+		text: "string with some characters1",
+		obj: {}
+	};
+	let testObject2 = {
+		text: "string with some characters2",
+		obj: {}
+	};
+	let testObject3 = {
+		text: "string with some characters3",
+		obj: {}
+	};
+	testObject.obj = testObject2;
+	testObject2.obj = testObject3;
+	testObject3.obj = testObject;
+	logger.log(testObject);
+	const str: string = testStream.read().toString();
+	it("logging circular reference", () => {
+		return chai.expect(str).to.contain("[circular reference]");
+	});
+});
+
+describe("Logging an X like circular loop", () => {
+	type X = {children: X[]};
+	let parent:X = {
+		children: []
+	};
+	let childA1:X = {
+		children: []
+	};
+	let childA2:X = {
+		children: []
+	};
+	let childB1:X = {
+		children: []
+	};
+	let childB2:X = {
+		children: []
+	};
+	parent.children.push(childA1);
+	childA1.children.push(childA2);
+	parent.children.push(childB1);
+	childB1.children.push(childB2);
+	childB2.children.push(childA1);
+	childA2.children.push(childB1);
+	it("logging circular reference", () => {
+		let testStream = new stream.PassThrough();
+		let logger = new Logger({
+			streams: [{ stream: testStream, color: false }], // Creates a logger with default settings, except logs it to our custom stream for testing
+			tabs: false
+		});
+		logger.log(parent);
+		const str: string = testStream.read().toString();
+		const len = (str.match(/\[circular reference\]/g) || []).length;
+		return chai.expect(len).to.equal(2);
+	});
+
 });

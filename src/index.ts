@@ -61,6 +61,16 @@ export class LoggerConfig {
 
 const reset = "\x1b[0m";
 
+
+type RefLink = {depth: number, ref: RefLink | null, value: any};
+function isCyclical(link:RefLink) {
+	let ref = link.ref;
+	while(ref !== null) {
+		if(ref.value === link.value) return true;
+		ref = ref.ref;
+	}
+	return false;
+}
 /**
  * The Logger class, it can be used to instantiate multiple instances of the Logger for extra customisability.
  */
@@ -196,7 +206,9 @@ export class Logger {
 	 * @param depth The depth of the current item (used for indentation and reference checking)
 	 * @returns A JSON-adjacent string of item
 	 **/
-	private stringifyItem(item: any, actualConfig: LoggerConfig, referenceArr: Array<[any, number]>, depth: number = 0): string {
+	private stringifyItem(link:RefLink, actualConfig: LoggerConfig): string {
+		const depth = link.depth;
+		const item = link.value;
 		const whitespace = actualConfig.tabs ? "\t" : "  ";
 		const lineStartWhitespace = whitespace.repeat(depth);
 		const newline = actualConfig.carriageReturn ? "\r\n" : "\n";
@@ -226,18 +238,10 @@ export class Logger {
 				break;
 			case "function":
 				// differentiate function from class
-				{
-					let hasNonTrivialReferences = false;
-					for(let i=0;i<referenceArr.length;i++) {
-						if(referenceArr[i][0] === item && depth > referenceArr[i][1]) {
-							result = "[non-trivial reference]";
-							hasNonTrivialReferences = true;
-							break;
-						}
-					}
-					if(hasNonTrivialReferences) break;
+				if(isCyclical(link)) {
+					result = "[circular reference]";
+					break;
 				}
-				referenceArr.push([item, depth]);
 				if(item.name[0].toUpperCase()===item.name[0]) {
 					result = `[Class ${item.prototype.constructor.name}]`;
 				} else {
@@ -251,20 +255,10 @@ export class Logger {
 					break;
 				}
 				// does this object have non-trivial references?
-				{
-					let hasNonTrivialReferences = false;
-					for(let i=0;i<referenceArr.length;i++) {
-						if(referenceArr[i][0] === item && depth > referenceArr[i][1]) {
-							result = "[non-trivial reference]";
-							hasNonTrivialReferences = true;
-							referenceArr[i][1] = depth;
-							break;
-						}
-					}
-					if(hasNonTrivialReferences) break;
+				if(isCyclical(link)) {
+					result = "[circular reference]";
+					break;
 				}
-				
-				referenceArr.push([item, depth]);
 				if (Array.isArray(item)) {
 					// check item is an array
 					
@@ -272,7 +266,7 @@ export class Logger {
 					else {
 						result = "[" + itemSeperator;
 						item.forEach((element, index) => {
-							result += whitespace + this.stringifyItem(element, actualConfig, referenceArr, depth+1);
+							result += whitespace + this.stringifyItem({depth: depth+1, ref: link, value: element}, actualConfig);
 							if (index + 1 !== item.length) result += "," + itemSeperator;
 						});
 						result += itemSeperator + "]";
@@ -286,7 +280,7 @@ export class Logger {
 					else result = "";
 					result += "{" + itemSeperator;
 					Object.keys(item).forEach((key, index) => {
-						result += `${whitespace}"${key}": ${this.stringifyItem(item[key], actualConfig, referenceArr, depth+1)}`;
+						result += `${whitespace}"${key}": ${this.stringifyItem({depth: depth+1, ref: link, value: item[key]}, actualConfig)}`;
 						if (index + 1 !== Object.keys(item).length) result += "," + itemSeperator;
 					});
 					result += itemSeperator + "}";
@@ -313,13 +307,13 @@ export class Logger {
 			// we don't want to log anything in this case.
 			// the timestamp and line number will still be printed, though.
 		} else if (content.length === 1) {
-			result = this.stringifyItem(content[0], actualConfig, references, 0);
+			result = this.stringifyItem({depth: 0, ref: null, value: content[0]}, actualConfig);
 		} else if (content.length > 1) {
 			// disable multilineObjects for multiple items
 			actualConfig.multilineObjects = false;
 			// result += "[ ";
 			for (let x: number = 0; x < content.length; x++) {
-				result += this.stringifyItem(content[x], actualConfig, references, 0);
+				result += this.stringifyItem({depth: 0, ref: null, value: content[x]}, actualConfig);
 				if (x + 1 !== content.length) result += " | ";
 			}
 			// result += " ]";
