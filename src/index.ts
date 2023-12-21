@@ -230,7 +230,7 @@ export class Logger {
 					let hasNonTrivialReferences = false;
 					for(let i=0;i<referenceArr.length;i++) {
 						if(referenceArr[i][0] === item && depth > referenceArr[i][1]) {
-							result = "[circular reference]";
+							result = "[non-trivial reference]";
 							hasNonTrivialReferences = true;
 							break;
 						}
@@ -255,7 +255,7 @@ export class Logger {
 					let hasNonTrivialReferences = false;
 					for(let i=0;i<referenceArr.length;i++) {
 						if(referenceArr[i][0] === item && depth > referenceArr[i][1]) {
-							result = "[circular reference]";
+							result = "[non-trivial reference]";
 							hasNonTrivialReferences = true;
 							referenceArr[i][1] = depth;
 							break;

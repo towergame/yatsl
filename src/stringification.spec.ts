@@ -78,6 +78,6 @@ describe("Logging a complex object with default settings", () => {
 	});
 	it("logging circular reference", () => {
 		console.log(str);
-		return chai.expect(str).to.contain("\"funny\": [circular reference]");
+		return chai.expect(str).to.contain("\"funny\": [non-trivial reference]");
 	});
 });
