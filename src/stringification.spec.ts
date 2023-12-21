@@ -41,27 +41,43 @@ describe("Logging a complex object with default settings", () => {
 	};
     testObject["funny"] = testObject;
     logger.log(testObject);
-    const str = testStream.read().toString();
+    const str: string = testStream.read().toString();
 
 	it("logging string types", () => {
-		return chai.expect(str).to.contain("\"text\": \"string with some characters\",");
+		return chai.expect(str).to.contain("\"text\": \"string with some characters\"");
 	});
     it("logging undefined", () => {
-		return chai.expect(str).to.contain("\"undef\": undefined,");
+		return chai.expect(str).to.contain("\"undef\": undefined");
 	});
     it("logging null", () => {
-		return chai.expect(str).to.contain("\"null\": null,");
+		return chai.expect(str).to.contain("\"null\": null");
 	});
     it("logging number", () => {
-		return chai.expect(str).to.contain("\"number\": 1,");
+		return chai.expect(str).to.contain("\"number\": 1");
 	});
     it("logging bool", () => {
-		return chai.expect(str).to.contain("\"boolean\": true,");
+		return chai.expect(str).to.contain("\"boolean\": true");
 	});
     it("logging arr", () => {
-		return chai.expect(str).to.match(/"array":\s+\[\s+1,\s+"he",\s+3\s+\],/);
+		return chai.expect(str).to.match(/"array":\s+\[\s+1,\s+"he",\s+3\s+\]/);
 	});
     it("logging function", () => {
-        return chai.expect(str).to.contain("\"fun\": [Function fun2],");
+        return chai.expect(str).to.contain("\"fun\": [Function fun2]");
     });
+	it("logging symbol", () => {
+		return chai.expect(str).to.contain("\"symbol\": Symbol(test)");
+	});
+	it("logging bigint", () => {
+		return chai.expect(str).to.contain("\"bigint\": 153424234");
+	});
+	it("logging class", () => {
+		return chai.expect(str).to.contain("\"s\": [Class S]");
+	});
+	it("logging class instance", () => {
+		return chai.expect(str).to.match(/"s_instance":\s*S\s*\{\s*"_de"\s*:\s*"de"\s*\}/g);
+	});
+	it("logging circular reference", () => {
+		console.log(str);
+		return chai.expect(str).to.contain("\"funny\": [circular reference]");
+	});
 });

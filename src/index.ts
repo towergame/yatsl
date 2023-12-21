@@ -222,7 +222,7 @@ export class Logger {
 				break;
 			case "symbol":
 				// TODO: Figure out how to stringify symbols, whatever that means
-				result = "[symbol]";
+				result = item.toString();
 				break;
 			case "function":
 				// differentiate function from class
@@ -230,7 +230,7 @@ export class Logger {
 					let hasNonTrivialReferences = false;
 					for(let i=0;i<referenceArr.length;i++) {
 						if(referenceArr[i][0] === item && depth > referenceArr[i][1]) {
-							result = "[unserializable object]";
+							result = "[circular reference]";
 							hasNonTrivialReferences = true;
 							break;
 						}
@@ -255,7 +255,7 @@ export class Logger {
 					let hasNonTrivialReferences = false;
 					for(let i=0;i<referenceArr.length;i++) {
 						if(referenceArr[i][0] === item && depth > referenceArr[i][1]) {
-							result = "[unserializable object]";
+							result = "[circular reference]";
 							hasNonTrivialReferences = true;
 							referenceArr[i][1] = depth;
 							break;
